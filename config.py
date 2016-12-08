@@ -1,0 +1,6 @@
+SERVER_HOST = '0.0.0.0'
+SERVER_PORT = 8888
+
+MONGO_HOST = '127.0.0.1'
+MONGO_PORT = 27018
+MONGO_DB = 'physionet_mortality'

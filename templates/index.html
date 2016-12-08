@@ -1,5 +1,26 @@
-% rebase('templates/base.html', title='Index')
-<h1>Welcome!</h1>
-<div class="u-full-width">
-    Hello there
-</div>
+%from datetime import timedelta
+% rebase('templates/base.html', title='Home')
+<h1>Experiments</h1>
+
+<table class="u-full-width">
+    <thead>
+    <tr>
+        <th>Model</th>
+        <th>Start time</th>
+        <th>Duration</th>
+        <th>AUC</th>
+    </tr>
+    </thead>
+    <tbody>
+
+    % for exp in experiments_info:
+    <tr>
+        <td>{{ exp['model'] }}</td>
+        <td>{{ exp['start_time'] }}</td>
+        <td>{{ timedelta(seconds=int((exp['stop_time'] - exp['start_time']).total_seconds())) }}</td>
+        <td>{{ '{0:0.3f}'.format(exp['result']['auc_val']) }}</td>
+    </tr>
+    % end
+
+    </tbody>
+</table>
