@@ -12,7 +12,7 @@ app = Bottle()
 client = MongoClient(MONGO_HOST, MONGO_PORT)
 db = client[MONGO_DB]
 
-@app.route('/static/<filename>', method='GET', name='static')
+@app.route('/static/<filename:path>', method='GET', name='static')
 def static(filename):
     return static_file(filename, root='./static/')
 
