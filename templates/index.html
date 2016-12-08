@@ -8,7 +8,20 @@
         <th>Model</th>
         <th>Start time</th>
         <th>Duration</th>
-        <th class="sort-default" data-sort-order='desc'>AUC</th>
+
+        % for cv in config_values:
+        <th>{{ cv.replace('_',' ') }}</th>
+        % end
+
+        <th class="sort-default">Train Score</th>
+        <th data-sort-order='desc'>Train Precision</th>
+        <th data-sort-order='desc'>Train Recall</th>
+        <th data-sort-order='desc'>Train AUC</th>
+
+        <th class="sort-default" data-sort-order='desc'>Val Score</th>
+        <th data-sort-order='desc'>Val Precision</th>
+        <th data-sort-order='desc'>Val Recall</th>
+        <th data-sort-order='desc'>Val AUC</th>
     </tr>
     </thead>
     <tbody>
@@ -18,6 +31,20 @@
         <td>{{ exp['model'] }}</td>
         <td>{{ exp['start_time'].strftime('%x %X') }}</td>
         <td>{{ timedelta(seconds=int((exp['stop_time'] - exp['start_time']).total_seconds())) }}</td>
+
+        % for cv in config_values:
+        <td>{{ exp['config'].get(cv,'') }}</td>
+        % end
+
+
+        <td>{{ '{0:0.3f}'.format(exp['result']['score_train']) }}</td>
+        <td>{{ '{0:0.3f}'.format(exp['result']['precision_train']) }}</td>
+        <td>{{ '{0:0.3f}'.format(exp['result']['recall_train']) }}</td>
+        <td>{{ '{0:0.3f}'.format(exp['result']['auc_train']) }}</td>
+
+        <td>{{ '{0:0.3f}'.format(exp['result']['score_val']) }}</td>
+        <td>{{ '{0:0.3f}'.format(exp['result']['precision_val']) }}</td>
+        <td>{{ '{0:0.3f}'.format(exp['result']['recall_val']) }}</td>
         <td>{{ '{0:0.3f}'.format(exp['result']['auc_val']) }}</td>
     </tr>
     % end

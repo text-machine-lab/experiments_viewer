@@ -17,29 +17,39 @@ def static(filename):
     return static_file(filename, root='./static/')
 
 
+
 @app.route('/', method='GET', name='index')
 @view('templates/index.html')
 def index():
     experiments_collection = db['default.runs']
+    experiments = list(experiments_collection.find({"status": "COMPLETED"}))
 
-    experiments_info = extract_info(experiments_collection)
+    experiments_info = extract_info(experiments)
+    config_values = extract_config_values(experiments)
 
     response = {
-        'experiments_info': experiments_info
+        'experiments_info': experiments_info,
+        'config_values': config_values,
     }
 
     return response
 
+def extract_config_values(experiments):
+    result = set([c for e in experiments for c in e['config'].keys()])
+    result ^= {'seed', 'model_class'}
+    result = sorted(result)
 
-def extract_info(experiments_collection):
-    experiments = experiments_collection.find({"status": "COMPLETED"})
+    return result
 
+
+def extract_info(experiments):
     result = [
         {
             'model': e['config']['model_class'].replace('Physionet', '').replace('Model', ''),
             'start_time': e['start_time'],
             'stop_time': e['stop_time'],
-            'result': e['result']
+            'result': e['result'],
+            'config': e['config'],
         }
         for e in experiments
     ]
