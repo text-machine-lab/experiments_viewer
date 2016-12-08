@@ -3,8 +3,7 @@
     margin-bottom: 25px;
 }
 
-.columns-list li {
+.configuration-container label {
     display: inline-block;
     margin-right: 1em;
-    list-style-type: none;
 }

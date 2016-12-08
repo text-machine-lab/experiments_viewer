@@ -12,10 +12,10 @@ app = Bottle()
 client = MongoClient(MONGO_HOST, MONGO_PORT)
 db = client[MONGO_DB]
 
+
 @app.route('/static/<filename:path>', method='GET', name='static')
 def static(filename):
     return static_file(filename, root='./static/')
-
 
 
 @app.route('/', method='GET', name='index')
@@ -27,12 +27,27 @@ def index():
     experiments_info = extract_info(experiments)
     config_values = extract_config_values(experiments)
 
+    # define the order of results , label, key, and default visibility
+    results = [
+        ('score_train', 'Train Score', True),
+        ('precision_train', 'Train Precision', False),
+        ('recall_train', 'Train Recall', False),
+        ('auc_train', 'Train AUC', True),
+
+        ('score_val', 'Val Score', True),
+        ('precision_val', 'Val Precision', False),
+        ('recall_val', 'Val Recall', False),
+        ('auc_val', 'Val AUC', True),
+    ]
+
     response = {
         'experiments_info': experiments_info,
         'config_values': config_values,
+        'results': results,
     }
 
     return response
+
 
 def extract_config_values(experiments):
     result = set([c for e in experiments for c in e['config'].keys()])
@@ -52,8 +67,7 @@ def extract_info(experiments):
             'config': e['config'],
         }
         for e in experiments
-    ]
-
+        ]
 
     return result
 

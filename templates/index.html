@@ -2,13 +2,31 @@
 % rebase('templates/base.html', title='Home')
 <h1>Experiments</h1>
 
-<div class="u-full-width">
-    Toggle columns:
-    <ul class="columns-list">
+<div class="u-full-width configuration-container">
+    Configuration:
+    <div class="row">
         % for cv in config_values:
-        <li><a data-column="{{ cv }}" class="toggle-column" href="#">{{ cv.replace('_',' ') }}</a></li>
+        <label>
+            <input type="checkbox" data-column="{{ cv }}" class="toggle-column"/>
+            <span class="label-body">{{ cv.replace('_',' ') }}</span>
+        </label>
         % end
-    </ul>
+    </div>
+
+    Results:
+    <div class="row">
+        % for r in results:
+        <label>
+            % if r[2]:
+            <input type="checkbox" data-column="{{ r[0] }}" class="toggle-column" checked="checked" />
+            % else:
+            <input type="checkbox" data-column="{{ r[0] }}" class="toggle-column" />
+            % end
+            <span class="label-body">{{  r[1] }}</span>
+        </label>
+        % end
+    </div>
+
 </div>
 
 <table id="experiments" class="u-full-width">
@@ -22,15 +40,10 @@
         <th data-name="{{ cv }}" data-visible="false">{{ cv.replace('_',' ') }}</th>
         % end
 
-        <th>Train Score</th>
-        <th>Train Precision</th>
-        <th>Train Recall</th>
-        <th>Train AUC</th>
+        % for r in results:
+        <th data-name="{{ r[0] }}" data-visible="{{ str(r[2]).lower() }}">{{ r[1] }}</th>
+        % end
 
-        <th>Val Score</th>
-        <th>Val Precision</th>
-        <th>Val Recall</th>
-        <th data-name="auc_val">Val AUC</th>
     </tr>
     </thead>
     <tbody>
@@ -45,16 +58,10 @@
         <td>{{ exp['config'].get(cv,'') }}</td>
         % end
 
+        % for r in results:
+        <td>{{ '{0:0.3f}'.format(exp['result'][r[0]]) }}</td>
+        % end
 
-        <td>{{ '{0:0.3f}'.format(exp['result']['score_train']) }}</td>
-        <td>{{ '{0:0.3f}'.format(exp['result']['precision_train']) }}</td>
-        <td>{{ '{0:0.3f}'.format(exp['result']['recall_train']) }}</td>
-        <td>{{ '{0:0.3f}'.format(exp['result']['auc_train']) }}</td>
-
-        <td>{{ '{0:0.3f}'.format(exp['result']['score_val']) }}</td>
-        <td>{{ '{0:0.3f}'.format(exp['result']['precision_val']) }}</td>
-        <td>{{ '{0:0.3f}'.format(exp['result']['recall_val']) }}</td>
-        <td>{{ '{0:0.3f}'.format(exp['result']['auc_val']) }}</td>
     </tr>
     % end
 
@@ -67,12 +74,10 @@
             "info": false,
             "paging": false,
             "searching": false,
-            order: [[$("[data-name='auc_val']").index(),'desc']]
+            order: [[$("[data-name='auc_val']").index(), 'desc']]
         });
 
-        $('a.toggle-column').on('click', function (e) {
-            e.preventDefault();
-
+        $('input.toggle-column').on('change', function (e) {
             // Get the column API object
             var column = table.column($(this).attr('data-column') + ':name');
 
