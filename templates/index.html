@@ -2,6 +2,15 @@
 % rebase('templates/base.html', title='Home')
 <h1>Experiments</h1>
 
+<div class="u-full-width">
+    Toggle columns:
+    <ul class="columns-list">
+        % for cv in config_values:
+        <li><a data-column="{{ cv }}" class="toggle-column" href="#">{{ cv.replace('_',' ') }}</a></li>
+        % end
+    </ul>
+</div>
+
 <table id="experiments" class="u-full-width">
     <thead>
     <tr>
@@ -10,18 +19,18 @@
         <th>Duration</th>
 
         % for cv in config_values:
-        <th>{{ cv.replace('_',' ') }}</th>
+        <th data-name="{{ cv }}" data-visible="false">{{ cv.replace('_',' ') }}</th>
         % end
 
-        <th class="sort-default">Train Score</th>
-        <th data-sort-order='desc'>Train Precision</th>
-        <th data-sort-order='desc'>Train Recall</th>
-        <th data-sort-order='desc'>Train AUC</th>
+        <th>Train Score</th>
+        <th>Train Precision</th>
+        <th>Train Recall</th>
+        <th>Train AUC</th>
 
-        <th class="sort-default" data-sort-order='desc'>Val Score</th>
-        <th data-sort-order='desc'>Val Precision</th>
-        <th data-sort-order='desc'>Val Recall</th>
-        <th data-sort-order='desc'>Val AUC</th>
+        <th>Val Score</th>
+        <th>Val Precision</th>
+        <th>Val Recall</th>
+        <th data-name="auc_val">Val AUC</th>
     </tr>
     </thead>
     <tbody>
@@ -53,5 +62,22 @@
 </table>
 
 <script>
-    new Tablesort(document.getElementById('experiments'));
+    $(function () {
+        var table = $('#experiments').DataTable({
+            "info": false,
+            "paging": false,
+            "searching": false,
+            order: [[$("[data-name='auc_val']").index(),'desc']]
+        });
+
+        $('a.toggle-column').on('click', function (e) {
+            e.preventDefault();
+
+            // Get the column API object
+            var column = table.column($(this).attr('data-column') + ':name');
+
+            // Toggle the visibility
+            column.visible(!column.visible());
+        });
+    });
 </script>
