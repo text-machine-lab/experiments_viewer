@@ -21,13 +21,91 @@ def static(filename):
 @app.route('/', method='GET', name='index')
 @view('templates/index.html')
 def index():
-    experiments_collection = db['default.runs']
-    experiments = list(experiments_collection.find({"status": "COMPLETED"}))
+    filters = get_filters()
+
+    experiments, current_filters = find_experiments(db, request.query, filters)
 
     experiments_info = extract_info(experiments)
     config_values = extract_config_values(experiments)
+    results = get_results_names()
 
-    # define the order of results , label, key, and default visibility
+    response = {
+        'experiments_info': experiments_info,
+
+        'config_values': config_values,
+
+        'results': results,
+
+        'filters': filters,
+        'current_filters': current_filters,
+        'format_url': format_url,
+    }
+
+    return response
+
+
+def format_url(current_filters, key, value):
+    new_filters = current_filters.copy()
+    new_filters[key] = value
+    if value == '':
+        new_filters.pop(key)
+
+    url_params = '&'.join([fk + '=' + fv for fk, fv in new_filters.items()])
+
+    return '/?' + url_params
+
+def find_experiments(db, query, filters):
+    db_query = {"status": "COMPLETED"}
+    current_filters = {}
+
+    for f in filters:
+        key = f['key']
+        if key in query:
+            val = query[key]
+
+            if val == '':
+                continue
+
+            current_filters[key] = val
+
+            if val in ('true', 'false'):
+                val = True if val == 'true' else False
+
+            db_query[key] = val
+
+    experiments_collection = db['default.runs']
+    experiments = list(experiments_collection.find(db_query))
+
+    return experiments, current_filters
+
+
+def get_filters():
+    filters = [
+        {
+            'name': 'Model',
+            'key': 'config.model_class',
+            'values': [
+                ('Timeseries', 'PhysionetTimeseriesModel'),
+                ('Features', 'PhysionetFeaturesModel',),
+                ('All', '',),
+            ],
+        },
+        {
+            'name': 'Masking',
+            'key': 'config.append_missing',
+            'values': [
+                ('Yes', 'true'),
+                ('No', 'false',),
+                ('All', '',),
+            ],
+        },
+    ]
+
+    return filters
+
+
+def get_results_names():
+    # define the order of results, label, key, and default visibility
     results = [
         ('score_train', 'Train Score', True),
         ('precision_train', 'Train Precision', False),
@@ -40,13 +118,7 @@ def index():
         ('auc_val', 'Val AUC', True),
     ]
 
-    response = {
-        'experiments_info': experiments_info,
-        'config_values': config_values,
-        'results': results,
-    }
-
-    return response
+    return results
 
 
 def extract_config_values(experiments):

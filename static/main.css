@@ -7,3 +7,14 @@
     display: inline-block;
     margin-right: 1em;
 }
+
+.filter-container {
+    display: inline;
+    margin-right: 1em;
+}
+.filter {
+
+}
+.filter-selected {
+    font-weight: bold;
+}
