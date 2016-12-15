@@ -34,7 +34,9 @@
         <div class="filter-container">
             <span>{{ f['name'] }}:</span>
             % for fv in f['values']:
-            <a href="{{ format_url(current_filters, f['key'], fv[1]) }}" class="filter {{ 'filter-selected' if f['key'] in current_filters and current_filters[f['key']] == fv[1] else '' }}">{{ fv[0] }}</a>
+            <a href="{{ format_url(current_filters, f['key'], fv[1]) }}"
+               class="filter {{ 'filter-selected' if f['key'] in current_filters and fv[1] in current_filters[f['key']] else '' }}">{{ fv[0] }}</a>
+            <!--&nbsp;-->
             % end
         </div>
         % end

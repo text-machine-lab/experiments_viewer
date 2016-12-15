@@ -1,6 +1,8 @@
 import json
+import copy
 
 from bottle import Bottle, HTTPError, request, template, route, static_file, view, redirect
+import pymongo
 from pymongo import MongoClient
 
 from config import SERVER_HOST, SERVER_PORT, MONGO_HOST, MONGO_PORT, MONGO_DB
@@ -45,38 +47,63 @@ def index():
 
 
 def format_url(current_filters, key, value):
-    new_filters = current_filters.copy()
-    new_filters[key] = value
-    if value == '':
+    new_filters = copy.deepcopy(current_filters)
+
+    if not key in new_filters:
+        new_filters[key] = []
+
+    if value != '':
+        if value not in new_filters[key]:
+            new_filters[key].append(value)
+        else:
+            new_filters[key].remove(value)
+    else:
         new_filters.pop(key)
 
-    url_params = '&'.join([fk + '=' + fv for fk, fv in new_filters.items()])
+    params = [fk + '=' + fv for fk, fvals in new_filters.items() for fv in fvals]
 
-    return '/?' + url_params
+    return '/' + ('?' + '&'.join(params) if len(params) > 0 else '')
+
 
 def find_experiments(db, query, filters):
-    db_query = {"status": "COMPLETED"}
     current_filters = {}
 
     for f in filters:
         key = f['key']
         if key in query:
-            val = query[key]
+            vals = query.getall(key)
 
-            if val == '':
-                continue
+            current_filters[key] = vals
 
-            current_filters[key] = val
-
-            if val in ('true', 'false'):
-                val = True if val == 'true' else False
-
-            db_query[key] = val
+    db_query = build_db_query(current_filters)
 
     experiments_collection = db['default.runs']
-    experiments = list(experiments_collection.find(db_query))
+    experiments = list(experiments_collection.find(
+        db_query
+        # , sort=[("result.auc_val", pymongo.DESCENDING)], limit=1000
+    ))
 
     return experiments, current_filters
+
+
+def build_db_query(current_filters):
+    def transoform_val(v):
+        if v == 'true':
+            return True
+        if v == 'false':
+            return False
+        return v
+
+    filters = {key: [transoform_val(v) for v in vals] for key, vals in current_filters.items()}
+
+    db_query = {"status": "COMPLETED"}
+    for key, vals in filters.items():
+        if len(vals) == 1:
+            db_query[key] = vals[0]
+        else:
+            db_query['$or'] = [{key: v} for v in vals]
+
+    return db_query
 
 
 def get_filters():
@@ -86,6 +113,8 @@ def get_filters():
             'key': 'config.model_class',
             'values': [
                 ('Timeseries', 'PhysionetTimeseriesModel'),
+                ('GRU-D', 'PhysionetTimeseriesGRUDModel',),
+                ('AdaptiveRNN', 'PhysionetTimeseriesAdaptiveRNNModel',),
                 ('Features', 'PhysionetFeaturesModel',),
                 ('All', '',),
             ],
@@ -93,6 +122,15 @@ def get_filters():
         {
             'name': 'Masking',
             'key': 'config.append_missing',
+            'values': [
+                ('Yes', 'true'),
+                ('No', 'false',),
+                ('All', '',),
+            ],
+        },
+        {
+            'name': 'Delta',
+            'key': 'config.append_delta',
             'values': [
                 ('Yes', 'true'),
                 ('No', 'false',),
