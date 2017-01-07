@@ -5,14 +5,13 @@ from bottle import Bottle, HTTPError, request, template, route, static_file, vie
 import pymongo
 from pymongo import MongoClient
 
-from config import SERVER_HOST, SERVER_PORT, MONGO_HOST, MONGO_PORT, MONGO_DB
+from config import SERVER_HOST, SERVER_PORT, MONGO_HOST, MONGO_PORT
 
 # app and routers
 app = Bottle()
 
 # mongo client
 client = MongoClient(MONGO_HOST, MONGO_PORT)
-db = client[MONGO_DB]
 
 
 @app.route('/static/<filename:path>', method='GET', name='static')
@@ -20,10 +19,26 @@ def static(filename):
     return static_file(filename, root='./static/')
 
 
-@app.route('/', method='GET', name='index')
-@view('templates/index.html')
+@app.route('/', method='GET', name='home')
+@view('templates/home.html')
 def index():
+    databases = client.database_names()
+
+    databases_with_urls = [(db, app.get_url('experiments', db_name=db)) for db in databases]
+
+    response = {
+        'databases': databases_with_urls,
+    }
+
+    return response
+
+
+@app.route('/experiments/<db_name>/', method='GET', name='experiments')
+@view('templates/experiments.html')
+def index(db_name):
     filters = get_filters()
+
+    db = client[db_name]
 
     experiments, current_filters = find_experiments(db, request.query, filters)
 
@@ -41,6 +56,7 @@ def index():
         'filters': filters,
         'current_filters': current_filters,
         'format_url': format_url,
+        'format_config_values': format_config_values,
     }
 
     return response
@@ -62,7 +78,7 @@ def format_url(current_filters, key, value):
 
     params = [fk + '=' + fv for fk, fvals in new_filters.items() for fv in fvals]
 
-    return '/' + ('?' + '&'.join(params) if len(params) > 0 else '')
+    return '' + ('?' + '&'.join(params) if len(params) > 0 else '')
 
 
 def find_experiments(db, query, filters):
@@ -115,7 +131,17 @@ def get_filters():
                 ('Timeseries', 'PhysionetTimeseriesModel'),
                 ('GRU-D', 'PhysionetTimeseriesGRUDModel',),
                 ('AdaptiveRNN', 'PhysionetTimeseriesAdaptiveRNNModel',),
+                ('AdaptiveTwoRNN', 'PhysionetTimeseriesAdaptiveTwoRNNModel',),
                 ('Features', 'PhysionetFeaturesModel',),
+                ('All', '',),
+            ],
+        },
+        {
+            'name': 'Data type',
+            'key': 'config.data_type',
+            'values': [
+                ('Sampled', 'sampled'),
+                ('Unsampled', 'unsampled',),
                 ('All', '',),
             ],
         },
@@ -180,6 +206,16 @@ def extract_info(experiments):
         ]
 
     return result
+
+
+def format_config_values(val):
+    if isinstance(val, float):
+        if abs(val) >= 0.001:
+            return '{:.3f}'.format(val)
+        else:
+            return '{:.2e}'.format(val)
+
+    return val
 
 
 if __name__ == '__main__':

@@ -1,0 +1,13 @@
+%from datetime import timedelta
+% rebase('templates/base.html', title='Home')
+<h1>Home</h1>
+
+<div class="u-full-width">
+    Databases:
+
+    <ul>
+    % for db in databases:
+        <li><a href="{{ db[1] }}">{{ db[0] }}</a></li>
+    % end
+    </ul>
+</div>

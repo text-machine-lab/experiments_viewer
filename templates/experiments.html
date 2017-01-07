@@ -1,5 +1,7 @@
 %from datetime import timedelta
-% rebase('templates/base.html', title='Home')
+% rebase('templates/base.html', title='Experiments')
+<a href="/" class="u-pull-right">Home</a>
+
 <h1>Experiments</h1>
 <h2>Found {{ len(experiments_info) }} experiments</h2>
 
@@ -70,7 +72,7 @@
         <td>{{ timedelta(seconds=int((exp['stop_time'] - exp['start_time']).total_seconds())) }}</td>
 
         % for cv in config_values:
-        <td>{{ exp['config'].get(cv,'') }}</td>
+        <td>{{ format_config_values(exp['config'].get(cv,'')) }}</td>
         % end
 
         % for r in results:
