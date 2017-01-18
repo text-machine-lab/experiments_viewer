@@ -60,9 +60,10 @@ def index(db_name):
     return response
 
 def extract_results(experiments_info, results_config):
-    results = sorted(set([r for e in experiments_info for r in e['result'].keys()]))
+    results_config_dict = {r[0]: r for r in results_config}
 
-    results_modified = [(r,r,True) if r not in results_config else results_config[r] for r in results]
+    results = sorted(set([r for e in experiments_info for r in e['result'].keys()]))
+    results_modified = [(r,r,True) if r not in results_config_dict else results_config_dict[r] for r in results]
 
     return results_modified
 

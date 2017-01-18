@@ -40,5 +40,7 @@ RESULTS_NAMES = []
 # ]
 FILTERS = []
 
-
-from config_local import *
+try:
+    from config_local import *
+except ImportError:
+    pass
