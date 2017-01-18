@@ -49,7 +49,6 @@
 <table id="experiments" class="u-full-width">
     <thead>
     <tr>
-        <th>Model</th>
         <th>Start time</th>
         <th>Duration</th>
 
@@ -67,7 +66,6 @@
 
     % for exp in experiments_info:
     <tr>
-        <td>{{ exp['model'] }}</td>
         <td>{{ exp['start_time'].strftime('%x %X') }}</td>
         <td>{{ timedelta(seconds=int((exp['stop_time'] - exp['start_time']).total_seconds())) }}</td>
 

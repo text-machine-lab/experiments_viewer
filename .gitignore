@@ -220,3 +220,4 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+config_local.py

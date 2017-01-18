@@ -5,7 +5,7 @@ from bottle import Bottle, HTTPError, request, template, route, static_file, vie
 import pymongo
 from pymongo import MongoClient
 
-from config import SERVER_HOST, SERVER_PORT, MONGO_HOST, MONGO_PORT
+from config import SERVER_HOST, SERVER_PORT, MONGO_HOST, MONGO_PORT, FILTERS, RESULTS_NAMES
 
 # app and routers
 app = Bottle()
@@ -36,15 +36,13 @@ def index():
 @app.route('/experiments/<db_name>/', method='GET', name='experiments')
 @view('templates/experiments.html')
 def index(db_name):
-    filters = get_filters()
-
     db = client[db_name]
 
-    experiments, current_filters = find_experiments(db, request.query, filters)
+    experiments, current_filters = find_experiments(db, request.query, FILTERS)
 
     experiments_info = extract_info(experiments)
     config_values = extract_config_values(experiments)
-    results = get_results_names()
+    results = extract_results(experiments, RESULTS_NAMES)
 
     response = {
         'experiments_info': experiments_info,
@@ -53,13 +51,20 @@ def index(db_name):
 
         'results': results,
 
-        'filters': filters,
+        'filters': FILTERS,
         'current_filters': current_filters,
         'format_url': format_url,
         'format_config_values': format_config_values,
     }
 
     return response
+
+def extract_results(experiments_info, results_config):
+    results = sorted(set([r for e in experiments_info for r in e['result'].keys()]))
+
+    results_modified = [(r,r,True) if r not in results_config else results_config[r] for r in results]
+
+    return results_modified
 
 
 def format_url(current_filters, key, value):
@@ -93,7 +98,7 @@ def find_experiments(db, query, filters):
 
     db_query = build_db_query(current_filters)
 
-    experiments_collection = db['default.runs']
+    experiments_collection = db['runs']
     experiments = list(experiments_collection.find(
         db_query
         # , sort=[("result.auc_val", pymongo.DESCENDING)], limit=1000
@@ -121,73 +126,8 @@ def build_db_query(current_filters):
 
     return db_query
 
-
-def get_filters():
-    filters = [
-        {
-            'name': 'Model',
-            'key': 'config.model_class',
-            'values': [
-                ('Timeseries', 'PhysionetTimeseriesModel'),
-                ('GRU-D', 'PhysionetTimeseriesGRUDModel',),
-                ('AdaptiveRNN', 'PhysionetTimeseriesAdaptiveRNNModel',),
-                ('AdaptiveTwoRNN', 'PhysionetTimeseriesAdaptiveTwoRNNModel',),
-                ('Features', 'PhysionetFeaturesModel',),
-                ('All', '',),
-            ],
-        },
-        {
-            'name': 'Data type',
-            'key': 'config.data_type',
-            'values': [
-                ('Sampled', 'sampled'),
-                ('Unsampled', 'unsampled',),
-                ('All', '',),
-            ],
-        },
-        {
-            'name': 'Masking',
-            'key': 'config.append_missing',
-            'values': [
-                ('Yes', 'true'),
-                ('No', 'false',),
-                ('All', '',),
-            ],
-        },
-        {
-            'name': 'Delta',
-            'key': 'config.append_delta',
-            'values': [
-                ('Yes', 'true'),
-                ('No', 'false',),
-                ('All', '',),
-            ],
-        },
-    ]
-
-    return filters
-
-
-def get_results_names():
-    # define the order of results, label, key, and default visibility
-    results = [
-        ('score_train', 'Train Score', True),
-        ('precision_train', 'Train Precision', False),
-        ('recall_train', 'Train Recall', False),
-        ('auc_train', 'Train AUC', True),
-
-        ('score_val', 'Val Score', True),
-        ('precision_val', 'Val Precision', False),
-        ('recall_val', 'Val Recall', False),
-        ('auc_val', 'Val AUC', True),
-    ]
-
-    return results
-
-
 def extract_config_values(experiments):
     result = set([c for e in experiments for c in e['config'].keys()])
-    result ^= {'seed', 'model_class'}
     result = sorted(result)
 
     return result
@@ -196,7 +136,6 @@ def extract_config_values(experiments):
 def extract_info(experiments):
     result = [
         {
-            'model': e['config']['model_class'].replace('Physionet', '').replace('Model', ''),
             'start_time': e['start_time'],
             'stop_time': e['stop_time'],
             'result': e['result'],
