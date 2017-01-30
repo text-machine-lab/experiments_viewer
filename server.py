@@ -62,7 +62,7 @@ def index(db_name):
 def extract_results(experiments_info, results_config):
     results_config_dict = {r[0]: r for r in results_config}
 
-    results = sorted(set([r for e in experiments_info for r in e['result'].keys() if 'result' in e]))
+    results = sorted(set([r for e in experiments_info if 'result' in e and e['result'] is not None for r in e['result'].keys()]))
     results_modified = [(r,r,True) if r not in results_config_dict else results_config_dict[r] for r in results]
 
     return results_modified
@@ -139,7 +139,7 @@ def extract_info(experiments):
         {
             'start_time': e['start_time'],
             'stop_time': e['stop_time'],
-            'result': e['result'],
+            'result': e['result'] if 'result' in e and e['result'] is not None else {},
             'config': e['config'],
         }
         for e in experiments

@@ -74,7 +74,7 @@
         % end
 
         % for r in results:
-        <td>{{ '{0:0.3f}'.format(exp['result'][r[0]]) }}</td>
+        <td>{{ '{0:0.3f}'.format(exp['result'][r[0]]) if r[0] in exp['result'] else '' }}</td>
         % end
 
     </tr>
