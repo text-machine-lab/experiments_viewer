@@ -46,7 +46,7 @@
 
 </div>
 
-<table id="experiments" class="u-full-width">
+<table id="experiments" class="u-full-width" style="width:100%">
     <thead>
     <tr>
         <th>Start time</th>
@@ -84,17 +84,20 @@
 </table>
 
 <script>
+    var experiments_table;
     $(function () {
-        var table = $('#experiments').DataTable({
+        experiments_table = $('#experiments').DataTable({
             "info": false,
-            "paging": false,
+//            "paging": false,
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
             "searching": false,
+            "scrollX": true
 //            order: [[$("[data-name='auc_val']").index(), 'desc']]
         });
 
         $('input.toggle-column').on('change', function (e) {
             // Get the column API object
-            var column = table.column($(this).attr('data-column') + ':name');
+            var column = experiments_table.column($(this).attr('data-column') + ':name');
 
             // Toggle the visibility
             column.visible(!column.visible());

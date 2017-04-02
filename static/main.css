@@ -12,9 +12,15 @@
     display: inline;
     margin-right: 1em;
 }
+
 .filter {
 
 }
+
 .filter-selected {
     font-weight: bold;
+}
+
+#experiments th, #experiments td {
+    white-space: nowrap;
 }
