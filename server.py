@@ -38,20 +38,24 @@ def index():
 def index(db_name):
     db = client[db_name]
 
-    experiments, current_filters = find_experiments(db, request.query, FILTERS)
+    filters = FILTERS.get(db_name, [])
+    experiments, current_filters = find_experiments(db, request.query, filters)
 
     experiments_info = extract_info(experiments)
     config_values = extract_config_values(experiments)
-    results = extract_results(experiments, RESULTS_NAMES)
+
+    results_config = RESULTS_NAMES.get(db_name, [])
+    results = extract_results(experiments, results_config)
 
     response = {
+        'db_name': db_name,
         'experiments_info': experiments_info,
 
         'config_values': config_values,
 
         'results': results,
 
-        'filters': FILTERS,
+        'filters': filters,
         'current_filters': current_filters,
         'format_url': format_url,
         'format_config_values': format_config_values,
@@ -84,7 +88,8 @@ def format_url(current_filters, key, value):
 
     params = [fk + '=' + fv for fk, fvals in new_filters.items() for fv in fvals]
 
-    return '' + ('?' + '&'.join(params) if len(params) > 0 else '')
+    url = '' + ('?' + '&'.join(params) if len(params) > 0 else '')
+    return url
 
 
 def find_experiments(db, query, filters):
